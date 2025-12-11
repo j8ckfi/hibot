@@ -1,5 +1,4 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -21,8 +20,6 @@ const client = new Client({
     GatewayIntentBits.MessageContent
   ]
 });
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -89,19 +86,35 @@ client.on('messageCreate', async (message) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    
-    const transcript = `${username}: ${prompt}\nhibot:`;
-    
-    const result = await model.generateContent({
-      contents: [
-        { role: 'user', parts: [{ text: '.' }] },
-        { role: 'model', parts: [{ text: transcript }] }
-      ]
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'model',
+              parts: [{ text: `[Discord chat log]\n\n${username}: ${prompt}\n\nhibot:` }]
+            }
+          ]
+        })
+      }
+    );
 
-    const responseText = result.response.text();
-    await sendLongMessage(message, responseText);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'API request failed');
+    }
+    
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!reply) {
+      throw new Error('No response from API');
+    }
+    
+    await sendLongMessage(message, reply);
   } catch (error) {
     console.error('Error generating content:', error);
     await message.reply('Sorry, I encountered an error while processing your request.');
