@@ -97,10 +97,7 @@ client.on('messageCreate', async (message) => {
               role: 'model',
               parts: [{ text: `[Discord chat log]\n\n${username}: ${prompt}\n\nhibot:` }]
             }
-          ],
-          generationConfig: {
-            stopSequences: ['\n\n', `\n${username}:`]
-          }
+          ]
         })
       }
     );
@@ -117,7 +114,9 @@ client.on('messageCreate', async (message) => {
       throw new Error('No response from API');
     }
     
-    await sendLongMessage(message, reply);
+    const firstResponse = reply.split(/\n\n|\n\w+:/)[0].trim();
+    
+    await sendLongMessage(message, firstResponse);
   } catch (error) {
     console.error('Error generating content:', error);
     await message.reply('Sorry, I encountered an error while processing your request.');
