@@ -23,6 +23,10 @@ const client = new Client({
 
 const MAX_MESSAGE_LENGTH = 2000;
 
+function oddjitter() {
+  return Math.floor(Math.random() * 9000) + 1000;
+}
+
 function splitMessage(content) {
   if (content.length <= MAX_MESSAGE_LENGTH) {
     return [content];
@@ -78,7 +82,6 @@ client.on('messageCreate', async (message) => {
   if (!message.mentions.has(client.user)) return;
 
   const prompt = message.content.replace(/<@!?\d+>/g, '').trim();
-  const username = message.author.username;
   
   if (!prompt) {
     await message.reply('Please provide a message after mentioning me.');
@@ -86,6 +89,8 @@ client.on('messageCreate', async (message) => {
   }
 
   try {
+    const transcript = `User#${oddjitter()}: ${prompt}\nUser#${oddjitter()}:`;
+    
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -95,7 +100,7 @@ client.on('messageCreate', async (message) => {
           contents: [
             {
               role: 'model',
-              parts: [{ text: `${username}: ${prompt}\nhibot:` }]
+              parts: [{ text: transcript }]
             }
           ]
         })
@@ -114,7 +119,7 @@ client.on('messageCreate', async (message) => {
       throw new Error('No response from API');
     }
     
-    const firstResponse = reply.split(/\n\n|\n\w+:/)[0].trim();
+    const firstResponse = reply.split(/\n\n|\nUser#\d+:/)[0].trim();
     
     await sendLongMessage(message, firstResponse);
   } catch (error) {
