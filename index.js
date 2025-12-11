@@ -97,7 +97,10 @@ client.on('messageCreate', async (message) => {
               role: 'model',
               parts: [{ text: `[Discord chat log]\n\n${username}: ${prompt}\n\nhibot:` }]
             }
-          ]
+          ],
+          generationConfig: {
+            stopSequences: ['\n\n', `\n${username}:`]
+          }
         })
       }
     );
