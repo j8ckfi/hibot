@@ -95,7 +95,7 @@ client.on('messageCreate', async (message) => {
           contents: [
             {
               role: 'model',
-              parts: [{ text: `[Discord chat log]\n\n${username}: ${prompt}\n\nhibot:` }]
+              parts: [{ text: `${username}: ${prompt}\nhibot:` }]
             }
           ]
         })
